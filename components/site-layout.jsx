@@ -4,6 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import BootSequence from "@/components/boot-sequence";
 import GlobalSearch from "@/components/global-search";
 import LiveSourceStatus from "@/components/live-source-status";
+import ThemeToggle from "@/components/theme-toggle";
 
 const navigation = [
   { href: "/", label: "Overview" },
@@ -19,7 +20,7 @@ const navigation = [
   { href: "/benchmarks", label: "Benchmarks" },
 ];
 
-export default function SiteLayout({ children }) {
+export default function SiteLayout({ children, theme }) {
   return (
     <div className="site-frame">
       <BootSequence />
@@ -33,6 +34,7 @@ export default function SiteLayout({ children }) {
         </nav>
         <div className="topbar-actions">
           <GlobalSearch />
+          <ThemeToggle initialTheme={theme} />
           <LiveSourceStatus />
         </div>
       </header>

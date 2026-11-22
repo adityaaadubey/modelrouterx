@@ -1,4 +1,5 @@
 import { Analytics } from '@vercel/analytics/next'
+import { cookies } from 'next/headers'
 import SiteLayout from '@/components/site-layout'
 import './globals.css'
 import './modelrouterx.css'
@@ -19,16 +20,24 @@ export const metadata = {
   robots: { index: true, follow: true },
 }
 
-export const viewport = {
-  colorScheme: 'dark',
-  themeColor: '#08090b',
+export async function generateViewport() {
+  const cookieStore = await cookies()
+  const theme = cookieStore.get('mrx-theme')?.value === 'light' ? 'light' : 'dark'
+
+  return {
+    colorScheme: theme,
+    themeColor: theme === 'light' ? '#efe4cc' : '#0b0819',
+  }
 }
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const cookieStore = await cookies()
+  const theme = cookieStore.get('mrx-theme')?.value === 'light' ? 'light' : 'dark'
+
   return (
-    <html lang="en">
+    <html lang="en" data-theme={theme}>
       <body className="mrx-body">
-        <SiteLayout>{children}</SiteLayout>
+        <SiteLayout theme={theme}>{children}</SiteLayout>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
