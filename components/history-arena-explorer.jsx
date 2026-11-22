@@ -57,7 +57,7 @@ export default function HistoryArenaExplorer({ initialSnapshots }) {
     <section className="panel history-arena-panel">
       <div className="section-heading"><div><p className="eyebrow"><History aria-hidden="true" /> HISTORICAL LEADERBOARD</p><h2>Design Arena rank snapshots</h2></div><span className="panel-index">{captures.length} CAPTURES</span></div>
       <div className="table-controls history-arena-controls">
-        <label className="provider-select"><span className="sr-only">Select historical capture</span><select value={capture} onChange={(event) => { setSelectedCapture(event.target.value); setPage(0); }}><option value="">Select a capture</option>{captures.map((item) => <option key={item} value={item}>{formatCapture(item)}</option>)}</select></label>
+        <label className="provider-select"><span className="sr-only">Select historical capture</span><select value={capture} onChange={(event) => { setSelectedCapture(event.target.value); setTrackFilter("all"); setPage(0); }}><option value="">Select a capture</option>{captures.map((item) => <option key={item} value={item}>{formatCapture(item)}</option>)}</select></label>
         <label className="provider-select"><span className="sr-only">Filter historical Arena track</span><select value={trackFilter} onChange={(event) => { setTrackFilter(event.target.value); setPage(0); }}><option value="all">All tracks</option>{tracks.map((track) => <option key={track} value={track}>{track.replace("/", " · ")}</option>)}</select></label>
         <span className="result-count"><strong>{filtered.length}</strong> source records</span>
       </div>
