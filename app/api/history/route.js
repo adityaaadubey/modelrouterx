@@ -5,7 +5,7 @@ export async function GET(request) {
   const rawModelId = params.get("model")?.trim().slice(0, 200);
   const source = params.get("source") === "huggingface" ? "huggingface" : "catalog";
   const rawLimit = Number(params.get("limit") || 100);
-  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(Math.floor(rawLimit), 1), 500) : 100;
+  const limit = Number.isFinite(rawLimit) ? Math.min(Math.max(Math.floor(rawLimit), 1), 1000) : 100;
   const result = source === "huggingface"
     ? await getHuggingFaceSnapshots({ modelId: rawModelId, limit })
     : await getHistorySnapshots({ modelId: rawModelId, limit });

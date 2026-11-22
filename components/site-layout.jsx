@@ -1,7 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight, Radio } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import BootSequence from "@/components/boot-sequence";
 import GlobalSearch from "@/components/global-search";
+import LiveSourceStatus from "@/components/live-source-status";
 
 const navigation = [
   { href: "/", label: "Overview" },
@@ -9,15 +11,18 @@ const navigation = [
   { href: "/models", label: "Models" },
   { href: "/providers", label: "Providers" },
   { href: "/compare", label: "Compare" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/router", label: "Router" },
   { href: "/trends", label: "Trends" },
   { href: "/history", label: "History" },
+  { href: "/intelligence", label: "Intelligence" },
   { href: "/benchmarks", label: "Benchmarks" },
 ];
 
 export default function SiteLayout({ children }) {
   return (
     <div className="site-frame">
+      <BootSequence />
       <header className="topbar">
         <Link className="brand-lockup" href="/" aria-label="ModelRouterX overview">
           <Image src="/brand/modelrouterx.svg" alt="" width={34} height={34} priority />
@@ -28,7 +33,7 @@ export default function SiteLayout({ children }) {
         </nav>
         <div className="topbar-actions">
           <GlobalSearch />
-          <span className="live-badge"><Radio aria-hidden="true" /> DATA SOURCES</span>
+          <LiveSourceStatus />
         </div>
       </header>
       <div className="mobile-nav-wrap">

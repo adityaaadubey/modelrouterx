@@ -6,7 +6,7 @@ export const metadata = { title: "Model comparison · ModelRouterX", description
 
 export default async function ComparePage({ searchParams }) {
   const [catalog, params] = await Promise.all([getCatalog(), searchParams]);
-  const rawIds = typeof params?.models === "string" ? params.models.split(",").slice(0, 2) : [];
+  const rawIds = typeof params?.models === "string" ? params.models.split(",").slice(0, 5) : [];
   const initialIds = rawIds.map((id) => {
     try { return decodeURIComponent(id); } catch { return ""; }
   }).filter(Boolean);

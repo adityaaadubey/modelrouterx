@@ -4,7 +4,7 @@ import PriceScatter from "@/components/price-scatter";
 import ModelTable from "@/components/model-table";
 import AnimatedCounter from "@/components/animated-counter";
 import { getCatalog, getTrendingModels } from "@/lib/platform-data";
-import { benchmarkValue, formatCount, formatDate, formatUsd, modelSlug } from "@/lib/model-utils";
+import { benchmarkValue, flattenDesignArena, formatCount, formatDate, formatUsd, modelSlug } from "@/lib/model-utils";
 
 function median(values) {
   const sorted = values.filter(Number.isFinite).sort((a, b) => a - b);
@@ -17,7 +17,7 @@ function MetricCard({ label, value, unit, note, icon: Icon, counter = false }) {
   return (
     <article className="metric-card">
       <div className="metric-label"><span>{label}</span><Icon aria-hidden="true" /></div>
-      <div className="metric-value">{counter ? <AnimatedCounter value={value} /> : value}<span className="metric-unit">{unit}</span></div>
+      <div className="metric-value">{counter ? <AnimatedCounter value={value} /> : value}{unit ? <> <span className="metric-unit">{unit}</span></> : null}</div>
       <p>{note}</p>
     </article>
   );
@@ -31,7 +31,7 @@ function SourcePill({ status, stale }) {
 export default async function HomePage() {
   const [catalog, trending] = await Promise.all([getCatalog(), getTrendingModels(30)]);
   const models = catalog.models;
-  const priced = models.filter((model) => model.promptPricePerMillion !== null);
+  const priced = models.filter((model) => Number.isFinite(model.promptPricePerMillion) && model.promptPricePerMillion >= 0);
   const lowestInput = [...priced].sort((a, b) => a.promptPricePerMillion - b.promptPricePerMillion)[0];
   const typicalContext = median(models.map((model) => Number(model.contextLength)).filter((value) => value > 0));
   const benchmarked = models.filter((model) => benchmarkValue(model, "intelligenceIndex") !== null);
@@ -42,6 +42,10 @@ export default async function HomePage() {
     modality,
     count: models.filter((model) => [...(model.inputModalities || []), ...(model.outputModalities || [])].includes(modality)).length,
   }));
+  const websiteArenaLeaders = flattenDesignArena(models)
+    .filter((entry) => entry.arena === "models" && entry.category === "website")
+    .sort((a, b) => b.elo - a.elo)
+    .slice(0, 5);
 
   return (
     <main className="page-content dashboard-page">
@@ -76,7 +80,7 @@ export default async function HomePage() {
       <section className="metric-grid" aria-label="Catalog statistics">
         <MetricCard label="INDEXED MODELS" value={models.length} unit="" note={`${providerCount} OpenRouter namespaces`} icon={Database} counter />
         <MetricCard label="MEDIAN CONTEXT" value={typicalContext ? formatCount(typicalContext) : "N/A"} unit={typicalContext ? "TOK" : ""} note="Across published model windows" icon={Crosshair} />
-        <MetricCard label="LOWEST INPUT PRICE" value={lowestInput ? formatUsd(lowestInput.promptPricePerMillion) : "N/A"} unit="/ 1M" note={lowestInput ? lowestInput.name : "No published price available"} icon={ArrowDownRight} />
+        <MetricCard label="LOWEST INPUT PRICE" value={lowestInput ? formatUsd(lowestInput.promptPricePerMillion) : "N/A"} unit={lowestInput ? "/ 1M" : ""} note={lowestInput ? lowestInput.name : "No published price available"} icon={ArrowDownRight} />
         <MetricCard label="AA INDEX COVERAGE" value={models.length ? `${Math.round((benchmarked.length / models.length) * 100)}%` : "N/A"} unit="" note={`${benchmarked.length} models with external values`} icon={Gauge} />
       </section>
 
@@ -122,6 +126,12 @@ export default async function HomePage() {
           <div className="empty-inline"><span>No benchmark values are available from the connected catalog.</span><Link href="/benchmarks">See benchmark coverage <ArrowRight aria-hidden="true" /></Link></div>
         )}
         <p className="table-note">External benchmark values are shown as published. ModelRouterX does not create a composite intelligence score.</p>
+      </section>
+
+      <section className="panel arena-preview-panel">
+        <div className="section-heading"><div><p className="eyebrow">DESIGN ARENA · WEBSITE TRACK</p><h2>Top published ELO scores</h2></div><Link className="panel-link" href="/leaderboard">Browse all tracks <ArrowRight aria-hidden="true" /></Link></div>
+        {websiteArenaLeaders.length ? <div className="arena-preview-list">{websiteArenaLeaders.map((entry) => <div className="arena-preview-row" key={`${entry.modelId}-${entry.category}`}><span className="arena-source-rank">{entry.rank == null ? "N/A" : `#${entry.rank}`}</span><span className="arena-preview-model"><Link href={`/models/${modelSlug(entry.modelId)}`}>{entry.modelName}</Link><small>{entry.modelId}</small></span><span className="arena-preview-score"><strong>{Number(entry.elo).toFixed(0)}</strong><small>ELO</small></span></div>)}</div> : <p className="empty-inline">No Design Arena website-track ELO values are available in the current catalog.</p>}
+        <p className="table-note">Track-specific output ranking from OpenRouter&apos;s Design Arena metadata. ELO is not a general intelligence score.</p>
       </section>
 
       <section className="panel table-panel">

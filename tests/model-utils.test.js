@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { calculateCost, formatCount, formatTokens, formatUsd, modelIdFromSlug, modelSlug } from "../lib/model-utils.js";
+import { calculateCost, flattenDesignArena, formatCount, formatTokens, formatUsd, modelIdFromSlug, modelSlug } from "../lib/model-utils.js";
 import { normalizeOpenRouterModel } from "../lib/sources/openrouter.js";
 import { normalizeHuggingFaceModel } from "../lib/sources/huggingface.js";
 
@@ -25,6 +25,9 @@ test("missing catalog values remain missing instead of becoming zero", () => {
   assert.equal(model.promptPricePerMillion, null);
   assert.equal(model.completionPricePerMillion, null);
   assert.equal(model.contextLength, null);
+  const unavailablePrice = normalizeOpenRouterModel({ id: "example/free", pricing: { prompt: "-1", completion: "-1" } });
+  assert.equal(unavailablePrice.promptPricePerMillion, null);
+  assert.equal(unavailablePrice.completionPricePerMillion, null);
 });
 
 test("OpenRouter benchmark fields retain source attribution and published values", () => {
@@ -35,6 +38,24 @@ test("OpenRouter benchmark fields retain source attribution and published values
   assert.equal(model.benchmarks.intelligenceIndex, 42.5);
   assert.equal(model.benchmarks.codingIndex, null);
   assert.match(model.benchmarkSource, /Artificial Analysis/);
+});
+
+test("Design Arena scores retain source category, ELO, rank, and win rate", () => {
+  const model = normalizeOpenRouterModel({
+    id: "example/design-model",
+    benchmarks: { design_arena: [{ arena: "models", category: "website", elo: 1343, rank: 4, win_rate: 60 }] },
+  });
+  assert.deepEqual(model.designArena[0], { arena: "models", category: "website", elo: 1343, winRate: 60, rank: 4 });
+});
+
+test("identical batch variants do not duplicate source Arena ranks", () => {
+  const track = [{ arena: "models", category: "website", elo: 1200, winRate: 50, rank: 3 }];
+  const records = flattenDesignArena([
+    { id: "org/model", name: "Model", sourceUrl: "https://openrouter.ai/org/model", designArena: track },
+    { id: "org/model:batch", name: "Model (batch)", sourceUrl: "https://openrouter.ai/org/model:batch", designArena: track },
+  ]);
+  assert.equal(records.length, 1);
+  assert.equal(records[0].modelId, "org/model");
 });
 
 test("Hugging Face activity counts are not fabricated when missing", () => {

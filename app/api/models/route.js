@@ -39,7 +39,7 @@ export async function GET(request) {
   }
 
   return Response.json(
-    { models: models.slice(0, limit), total: models.length, source: catalog.source, status: catalog.status, stale: catalog.stale, error: catalog.error },
+    { models: models.slice(0, limit), total: models.length, source: catalog.source, status: catalog.status, stale: catalog.stale, checkedAt: catalog.checkedAt, error: catalog.error },
     { headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" } },
   );
 }

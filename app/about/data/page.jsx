@@ -4,8 +4,8 @@ import { ArrowUpRight, Database, FileCheck2, Fingerprint, ShieldCheck } from "lu
 export const metadata = { title: "Data & methodology · ModelRouterX", description: "Review ModelRouterX data sources, ranking rules, refresh windows, and privacy boundaries." };
 
 const principles = [
-  { icon: Database, title: "Source values stay attributed", body: "Catalog metadata and listed prices come from OpenRouter. Hugging Face downloads and likes come from its Hub API. External Artificial Analysis indices are labeled as such." },
-  { icon: FileCheck2, title: "No synthetic overall score", body: "ModelRouterX does not combine benchmark scales into a new intelligence rating. The leaderboard sorts only models with a source-published index value." },
+  { icon: Database, title: "Source values stay attributed", body: "Catalog metadata, Design Arena ELO tracks, and Artificial Analysis indices are sourced through OpenRouter. Hugging Face downloads and likes come from its Hub API." },
+  { icon: FileCheck2, title: "No synthetic overall score", body: "ModelRouterX does not combine benchmark scales into a new intelligence rating. Design Arena ELO is separated by track; Artificial Analysis values stay on their own index scale." },
   { icon: Fingerprint, title: "Missing remains missing", body: "Unknown prices, context windows, and benchmark values render as N/A. They are never replaced with zero or guessed from a neighboring model." },
   { icon: ShieldCheck, title: "Database writes stay server-side", body: "Supabase tables have row-level security enabled with no anonymous or authenticated grants. A server-only service key is used only for the scheduled ingestion route." },
 ];
@@ -21,7 +21,7 @@ export default function DataMethodologyPage() {
         <div className="source-register">
           <div><span>01 / MODEL DIRECTORY</span><strong>OpenRouter public model API</strong><p>Model IDs, display names, descriptions, context windows, input/output modalities, published per-token prices, catalog timestamps, and syndicated benchmark fields.</p><a href="https://openrouter.ai/docs/api-reference/models/list" target="_blank" rel="noreferrer">API reference <ArrowUpRight aria-hidden="true" /></a></div>
           <div><span>02 / POPULARITY</span><strong>Hugging Face Hub models API</strong><p>Text-generation models ordered by cumulative downloads. Downloads and likes are popularity signals only, not a proxy for intelligence or quality.</p><a href="https://huggingface.co/docs/hub/en/api" target="_blank" rel="noreferrer">API reference <ArrowUpRight aria-hidden="true" /></a></div>
-          <div><span>03 / THIRD-PARTY INDEX</span><strong>Artificial Analysis values via OpenRouter</strong><p>Displayed exactly as returned for each model. The ranked view uses the intelligence index only; coding and agentic indices are available as separate router filters.</p><Link href="/benchmarks">View current coverage <ArrowUpRight aria-hidden="true" /></Link></div>
+          <div><span>03 / THIRD-PARTY INDEX</span><strong>Design Arena and Artificial Analysis via OpenRouter</strong><p>Design Arena ELO is displayed by its original category. Artificial Analysis indexes stay separately attributed. The feed does not provide a general Chatbot Arena leaderboard or every requested benchmark family.</p><Link href="/benchmarks">View current coverage <ArrowUpRight aria-hidden="true" /></Link></div>
         </div>
       </section>
       <section className="policy-grid">
