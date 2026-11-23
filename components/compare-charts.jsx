@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, CartesianGrid, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from "recharts";
 import { ChartSeriesToggles } from "@/components/chart-controls";
 import useReducedMotion from "@/lib/use-reduced-motion";
 import { benchmarkValue, formatUsd } from "@/lib/model-utils";
@@ -38,13 +38,22 @@ function toggleVisible(current, key) {
 export default function CompareCharts({ first, second }) {
   const [activeSeries, setActiveSeries] = useState(compareSeries.map((item) => item.key));
   const reducedMotion = useReducedMotion();
-  const radarData = benchmarkAxes
-    .map((metric) => ({ subject: metric.label, first: benchmarkValue(first, metric.key), second: benchmarkValue(second, metric.key) }))
-    .filter((row) => row.first !== null && row.second !== null);
+  const benchmarkData = benchmarkAxes
+    .map((metric) => {
+      const firstValue = benchmarkValue(first, metric.key);
+      const secondValue = benchmarkValue(second, metric.key);
+      return {
+        subject: metric.label,
+        first: firstValue,
+        second: secondValue,
+        winner: firstValue >= secondValue ? "first" : "second",
+      };
+    })
+    .filter((row) => row.first != null && row.second != null && Number.isFinite(Number(row.first)) && Number.isFinite(Number(row.second)));
   const priceData = [
     { label: "Input / 1M", first: first.promptPricePerMillion, second: second.promptPricePerMillion },
     { label: "Output / 1M", first: first.completionPricePerMillion, second: second.completionPricePerMillion },
-  ].filter((row) => row.first !== null && row.second !== null);
+  ].filter((row) => row.first != null && row.second != null && Number.isFinite(Number(row.first)) && Number.isFinite(Number(row.second)));
   const series = compareSeries.map((item, index) => ({ ...item, label: index === 0 ? first.name : second.name }));
 
   return (
@@ -54,24 +63,28 @@ export default function CompareCharts({ first, second }) {
           <div><p className="eyebrow">EXTERNAL INDEX VALUES</p><h2>Benchmark comparison</h2></div>
           <span className="source-inline">Artificial Analysis via OpenRouter</span>
         </div>
-        {radarData.length >= 3 ? (
+        {benchmarkData.length ? (
           <>
             <ChartSeriesToggles items={series} activeKeys={activeSeries} onToggle={(key) => setActiveSeries((current) => toggleVisible(current, key))} label="Show or hide model benchmark series" />
             <div className="comparison-chart-frame">
               <ChartContainer config={benchmarkConfig} className="chart-canvas">
-                <RadarChart accessibilityLayer data={radarData} outerRadius="68%">
-                  <PolarGrid stroke="var(--chart-grid)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--text-secondary)", fontSize: 10, fontFamily: "var(--mrx-mono)" }} />
-                  <PolarRadiusAxis angle={30} domain={[0, "auto"]} tick={{ fill: "var(--text-muted)", fontSize: 9, fontFamily: "var(--mrx-mono)" }} axisLine={{ stroke: "var(--chart-grid)" }} />
-                  <ChartTooltip content={<ChartTooltipContent className="chart-tooltip" formatter={(value, name) => <div className="chart-tooltip-row"><span>{name}</span><strong>{Number(value).toFixed(1)}</strong></div>} />} />
-                  {activeSeries.includes("first") && <Radar name={first.name} dataKey="first" stroke="var(--color-first)" fill="var(--color-first)" fillOpacity={0.14} strokeWidth={2} isAnimationActive={!reducedMotion} animationDuration={720} />}
-                  {activeSeries.includes("second") && <Radar name={second.name} dataKey="second" stroke="var(--color-second)" fill="var(--color-second)" fillOpacity={0.12} strokeWidth={2} isAnimationActive={!reducedMotion} animationDuration={720} />}
-                </RadarChart>
+                <BarChart accessibilityLayer data={benchmarkData} margin={{ top: 12, right: 10, bottom: 4, left: 2 }} barGap={4} barCategoryGap="24%">
+                  <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="2 5" />
+                  <XAxis dataKey="subject" interval={0} tickMargin={9} tick={{ fill: "var(--text-secondary)", fontSize: 9, fontFamily: "var(--mrx-mono)" }} axisLine={{ stroke: "var(--chart-grid)" }} tickLine={false} />
+                  <YAxis domain={[0, "auto"]} tickFormatter={(value) => Number(value).toFixed(0)} tick={{ fill: "var(--text-muted)", fontSize: 9, fontFamily: "var(--mrx-mono)" }} axisLine={false} tickLine={false} width={42} />
+                  <ChartTooltip cursor={{ fill: "var(--chart-hover)" }} content={<ChartTooltipContent className="chart-tooltip" formatter={(value, name) => <div className="chart-tooltip-row"><span>{name}</span><strong>{Number(value).toFixed(1)}</strong></div>} />} />
+                  {activeSeries.includes("first") && <Bar name={first.name} dataKey="first" fill="var(--color-first)" radius={0} maxBarSize={28} isAnimationActive={!reducedMotion} animationDuration={520}>
+                    {benchmarkData.map((row) => <Cell key={row.subject} fillOpacity={row.winner === "first" ? 1 : 0.58} />)}
+                  </Bar>}
+                  {activeSeries.includes("second") && <Bar name={second.name} dataKey="second" fill="var(--color-second)" radius={0} maxBarSize={28} isAnimationActive={!reducedMotion} animationDuration={520}>
+                    {benchmarkData.map((row) => <Cell key={row.subject} fillOpacity={row.winner === "second" ? 1 : 0.58} />)}
+                  </Bar>}
+                </BarChart>
               </ChartContainer>
             </div>
           </>
         ) : (
-          <div className="empty-state compact-empty"><h3>Insufficient shared benchmark data</h3><p>At least three comparable external index values are needed for a radar plot. Missing values are not drawn as zero.</p></div>
+          <div className="empty-state compact-empty"><h3>No shared benchmark data</h3><p>Comparable external index values will appear here when both models have published data. Missing values are not drawn as zero.</p></div>
         )}
       </section>
       <section className="panel chart-panel">
@@ -89,8 +102,8 @@ export default function CompareCharts({ first, second }) {
                   <XAxis dataKey="label" tick={{ fill: "var(--text-secondary)", fontSize: 10, fontFamily: "var(--mrx-mono)" }} axisLine={{ stroke: "var(--chart-grid)" }} tickLine={false} />
                   <YAxis tickFormatter={formatUsd} tick={{ fill: "var(--text-muted)", fontSize: 10, fontFamily: "var(--mrx-mono)" }} axisLine={false} tickLine={false} width={62} />
                   <ChartTooltip cursor={{ fill: "var(--chart-hover)" }} content={<ChartTooltipContent className="chart-tooltip" formatter={(value, name) => <div className="chart-tooltip-row"><span>{name}</span><strong>{formatUsd(value)}</strong></div>} />} />
-                  {activeSeries.includes("first") && <Bar name={first.name} dataKey="first" fill="var(--color-first)" isAnimationActive={!reducedMotion} animationDuration={720} />}
-                  {activeSeries.includes("second") && <Bar name={second.name} dataKey="second" fill="var(--color-second)" isAnimationActive={!reducedMotion} animationDuration={720} />}
+                  {activeSeries.includes("first") && <Bar name={first.name} dataKey="first" fill="var(--color-first)" radius={0} maxBarSize={36} isAnimationActive={!reducedMotion} animationDuration={620} />}
+                  {activeSeries.includes("second") && <Bar name={second.name} dataKey="second" fill="var(--color-second)" radius={0} maxBarSize={36} isAnimationActive={!reducedMotion} animationDuration={620} />}
                 </BarChart>
               </ChartContainer>
             </div>

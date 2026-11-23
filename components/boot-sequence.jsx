@@ -16,10 +16,20 @@ export default function BootSequence() {
   const [visible, setVisible] = useState(false);
 
   useLayoutEffect(() => {
-    try {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches || sessionStorage.getItem("mrx-boot-complete") === "1") return;
-      setVisible(true);
-    } catch {}
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let alreadyComplete = false;
+    try { alreadyComplete = sessionStorage.getItem("mrx-boot-complete") === "1"; } catch {}
+    if (motionQuery.matches || alreadyComplete) return undefined;
+
+    const stopForReducedMotion = (event) => {
+      if (!event.matches) return;
+      try { sessionStorage.setItem("mrx-boot-complete", "1"); } catch {}
+      setVisible(false);
+    };
+    motionQuery.addEventListener("change", stopForReducedMotion);
+    setVisible(true);
+
+    return () => motionQuery.removeEventListener("change", stopForReducedMotion);
   }, []);
 
   useLayoutEffect(() => {
@@ -41,6 +51,10 @@ export default function BootSequence() {
 
   function skip() {
     try { sessionStorage.setItem("mrx-boot-complete", "1"); } catch {}
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setVisible(false);
+      return;
+    }
     gsap.to(rootRef.current, { opacity: 0, duration: 0.12, onComplete: () => setVisible(false) });
   }
 
