@@ -3,12 +3,14 @@ import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import SiteNavigation from "@/components/site-navigation";
 import ThemeToggle from "@/components/theme-toggle";
+import HeaderShaderField from "@/components/header-shader-field";
 
 export default function SiteLayout({ children, theme }) {
   return (
     <div className="site-frame arena-site-frame">
       <a className="skip-to-content" href="#main-content">Skip to content</a>
       <header className="topbar arena-topbar">
+        <HeaderShaderField />
         <Link className="brand-lockup" href="/" aria-label="ModelRouterX overview">
           <Image src="/brand/arena-signal.svg" alt="" width={36} height={36} priority />
           <span className="brand-name">modelrouter<span>x</span></span>

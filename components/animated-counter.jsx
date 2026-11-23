@@ -11,8 +11,8 @@ export default function AnimatedCounter({ value }) {
   useLayoutEffect(() => {
     const node = ref.current;
     if (!node) return undefined;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (reducedMotion) return undefined;
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motionQuery.matches) return undefined;
 
     const counter = { value: 0 };
     const tween = gsap.to(counter, {
@@ -23,7 +23,17 @@ export default function AnimatedCounter({ value }) {
         if (node) node.textContent = formatCount(Math.round(counter.value));
       },
     });
-    return () => tween.kill();
+    const stopOnReducedMotion = (event) => {
+      if (!event.matches) return;
+      tween.kill();
+      if (node) node.textContent = formatCount(numericValue);
+    };
+    motionQuery.addEventListener("change", stopOnReducedMotion);
+
+    return () => {
+      motionQuery.removeEventListener("change", stopOnReducedMotion);
+      tween.kill();
+    };
   }, [numericValue]);
 
   return <span ref={ref}>{formatCount(numericValue)}</span>;

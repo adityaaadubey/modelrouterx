@@ -5,8 +5,23 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { Activity, Building2, Database } from "lucide-react";
 import { buildProviderDirectory, formatArenaCount } from "@/lib/arena-utils";
 import { EmptyState, PanelHeading, SnapshotMeta } from "@/components/arena-ui";
+import useReducedMotion from "@/lib/use-reduced-motion";
+
+function ProviderChartTooltip({ active, payload }) {
+  const provider = payload?.[0]?.payload;
+  if (!active || !provider) return null;
+
+  return (
+    <div className="arena-chart-tooltip chart-tooltip">
+      <strong className="chart-tooltip-title">{provider.organization}</strong>
+      <div className="chart-tooltip-row"><span>Unique models</span><strong>{formatArenaCount(provider.modelCount)}</strong></div>
+      <div className="chart-tooltip-row"><span>Source tracks</span><strong>{formatArenaCount(provider.trackCount)}</strong></div>
+    </div>
+  );
+}
 
 export default function ArenaProviderExplorer({ snapshot, rows = [] }) {
+  const reducedMotion = useReducedMotion();
   const providers = useMemo(() => buildProviderDirectory(rows), [rows]);
   const leadingProviders = providers.slice(0, 10);
   const maxCount = leadingProviders[0]?.modelCount || 1;
@@ -34,7 +49,21 @@ export default function ArenaProviderExplorer({ snapshot, rows = [] }) {
           </section>
 
           <div className="arena-provider-analytics-grid">
-            <section className="arena-panel arena-provider-chart-panel"><PanelHeading eyebrow="TOP 10 · UNIQUE MODELS" title="Largest represented labs" /><div className="arena-provider-chart"><ResponsiveContainer width="100%" height="100%"><BarChart accessibilityLayer data={leadingProviders} layout="vertical" margin={{ top: 6, right: 18, bottom: 2, left: 6 }}><CartesianGrid horizontal={false} stroke="var(--arena-grid)" strokeDasharray="3 5" /><XAxis type="number" tick={{ fill: "var(--arena-muted)", fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} /><YAxis type="category" dataKey="organization" width={104} tick={{ fill: "var(--arena-text-soft)", fontSize: 10 }} axisLine={false} tickLine={false} /><Tooltip cursor={{ fill: "var(--arena-hover)" }} contentStyle={{ border: "1px solid var(--arena-border)", borderRadius: 12, background: "var(--arena-panel)", color: "var(--arena-text)" }} formatter={(value) => [value, "Unique models"]} /><Bar dataKey="modelCount" fill="var(--arena-accent)" radius={[0, 5, 5, 0]} maxBarSize={24} isAnimationActive animationDuration={700} /></BarChart></ResponsiveContainer></div></section>
+            <section className="arena-panel arena-provider-chart-panel">
+              <PanelHeading eyebrow="TOP 10 · UNIQUE MODELS" title="Largest represented labs" />
+              <figure className="arena-provider-chart" aria-label="Top ten publishers by unique model count">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart accessibilityLayer data={leadingProviders} layout="vertical" margin={{ top: 6, right: 18, bottom: 2, left: 6 }}>
+                    <CartesianGrid horizontal={false} stroke="var(--arena-grid)" strokeDasharray="3 5" />
+                    <XAxis type="number" domain={[0, maxCount]} tick={{ fill: "var(--arena-muted)", fontSize: 9, fontFamily: "var(--arena-sans)" }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <YAxis type="category" dataKey="organization" width={112} tick={{ fill: "var(--arena-text-soft)", fontSize: 9, fontFamily: "var(--arena-sans)" }} axisLine={false} tickLine={false} />
+                    <Tooltip cursor={{ fill: "var(--chart-hover)" }} content={<ProviderChartTooltip />} />
+                    <Bar dataKey="modelCount" fill="var(--arena-accent)" radius={0} maxBarSize={18} isAnimationActive={!reducedMotion} animationDuration={520} />
+                  </BarChart>
+                </ResponsiveContainer>
+                <figcaption className="sr-only">Horizontal bars compare the number of unique model names attributed to each publisher in the fetched dataset.</figcaption>
+              </figure>
+            </section>
             <section className="arena-panel arena-provider-stat-panel"><PanelHeading eyebrow="PUBLISHER COVERAGE" title="At a glance" /><div className="arena-provider-stat"><span><Building2 aria-hidden="true" /> Listed organizations</span><strong>{formatArenaCount(providers.length)}</strong></div><div className="arena-provider-stat"><span><Activity aria-hidden="true" /> Unique model names</span><strong>{formatArenaCount(providers.reduce((total, provider) => total + provider.modelCount, 0))}</strong></div><div className="arena-provider-stat"><span><Database aria-hidden="true" /> Leaderboard tracks</span><strong>{formatArenaCount(new Set(rows.map((row) => row.source_config)).size)}</strong></div><div className="arena-provider-largest"><span>LARGEST PRESENCE</span><strong>{leadingProviders[0]?.organization}</strong><small>{formatArenaCount(leadingProviders[0]?.modelCount)} unique models across the fetched tracks</small></div></section>
           </div>
 

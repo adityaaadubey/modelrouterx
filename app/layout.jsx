@@ -1,5 +1,6 @@
 import { Analytics } from '@vercel/analytics/next'
 import { cookies } from 'next/headers'
+import Script from 'next/script'
 import SiteLayout from '@/components/site-layout'
 import './globals.css'
 import './theme-tokens.css'
@@ -13,16 +14,37 @@ const themeInitScript = `(() => {
     ? savedTheme
     : window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
   root.dataset.theme = theme;
-  root.className = theme;
+  root.classList.toggle('dark', theme === 'dark');
+  root.classList.toggle('light', theme === 'light');
   root.style.colorScheme = theme;
   const colorScheme = document.getElementById('mrx-color-scheme');
   if (colorScheme) colorScheme.content = theme;
-  const setThemeColor = () => {
+  const syncThemeMetadata = () => {
+    const activeTheme = root.dataset.theme;
     const page = getComputedStyle(root).getPropertyValue('--page').trim();
-    const themeColor = document.getElementById('mrx-theme-color');
-    if (page && themeColor) themeColor.content = page;
+    let colorSchemes = document.querySelectorAll('meta[name="color-scheme"]');
+    let themeColors = document.querySelectorAll('meta[name="theme-color"]');
+
+    if (!colorSchemes.length) {
+      const meta = document.createElement('meta');
+      meta.name = 'color-scheme';
+      document.head.appendChild(meta);
+      colorSchemes = document.querySelectorAll('meta[name="color-scheme"]');
+    }
+
+    if (!themeColors.length) {
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      document.head.appendChild(meta);
+      themeColors = document.querySelectorAll('meta[name="theme-color"]');
+    }
+
+    colorSchemes.forEach((meta) => { meta.content = activeTheme; });
+    if (page) themeColors.forEach((meta) => { meta.content = page; });
   };
-  requestAnimationFrame(setThemeColor);
+  syncThemeMetadata();
+  requestAnimationFrame(syncThemeMetadata);
+  new MutationObserver(syncThemeMetadata).observe(document.head, { childList: true });
   const secure = location.protocol === 'https:' ? '; Secure' : '';
   document.cookie = 'mrx-theme=' + theme + '; Path=/; Max-Age=31536000; SameSite=Lax' + secure;
 })();`
@@ -48,11 +70,6 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  colorScheme: 'dark light',
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f4f2ed' },
-    { media: '(prefers-color-scheme: dark)', color: '#1a1917' },
-  ],
 }
 
 export default async function RootLayout({ children }) {
@@ -61,13 +78,10 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang="en" data-theme={theme} className={theme} data-scroll-behavior="smooth" suppressHydrationWarning>
-      <head>
-        <meta id="mrx-theme-color" name="theme-color" content="" />
-        <meta id="mrx-color-scheme" name="color-scheme" content={theme} />
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-      </head>
+      <head />
       <body className="mrx-body">
         <SiteLayout theme={theme}>{children}</SiteLayout>
+        <Script id="mrx-theme-init" strategy="beforeInteractive">{themeInitScript}</Script>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

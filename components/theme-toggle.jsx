@@ -5,10 +5,11 @@ import { Moon, Sun } from "lucide-react";
 
 function updateThemeMetadata(theme) {
   const root = document.documentElement;
-  const colorScheme = document.getElementById("mrx-color-scheme");
-  const themeColor = document.getElementById("mrx-theme-color");
-  if (colorScheme) colorScheme.content = theme;
-  if (themeColor) themeColor.content = getComputedStyle(root).getPropertyValue("--page").trim();
+  const page = getComputedStyle(root).getPropertyValue("--page").trim();
+  document.querySelectorAll('meta[name="color-scheme"]').forEach((meta) => { meta.content = theme; });
+  if (page) {
+    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => { meta.content = page; });
+  }
 }
 
 export default function ThemeToggle({ initialTheme = "dark" }) {
@@ -23,7 +24,8 @@ export default function ThemeToggle({ initialTheme = "dark" }) {
   function toggleTheme() {
     const root = document.documentElement;
     root.dataset.theme = nextTheme;
-    root.className = nextTheme;
+    root.classList.toggle("dark", nextTheme === "dark");
+    root.classList.toggle("light", nextTheme === "light");
     root.style.colorScheme = nextTheme;
     updateThemeMetadata(nextTheme);
 

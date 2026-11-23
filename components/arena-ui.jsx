@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { TRACKS, formatArenaCount, formatArenaScore, formatArenaDate, getCategoryLabel, getTrackLabel } from "@/lib/arena-utils";
+import useReducedMotion from "@/lib/use-reduced-motion";
 
 export function TrackStrip({ value, onChange, label = "Choose a leaderboard track" }) {
   return (
@@ -58,10 +59,24 @@ export function EmptyState({ title, children }) {
   );
 }
 
+function RankingChartTooltip({ active, payload }) {
+  const row = payload?.[0]?.payload;
+  if (!active || !row) return null;
+
+  return (
+    <div className="arena-chart-tooltip chart-tooltip">
+      <strong className="chart-tooltip-title">{row.name}</strong>
+      <div className="chart-tooltip-row"><span>Source rank</span><strong>#{row.rank}</strong></div>
+      <div className="chart-tooltip-row"><span>Published score</span><strong>{formatArenaScore(row.rating)}</strong></div>
+    </div>
+  );
+}
+
 export function RankingChart({ rows, label = "Leaderboard score chart" }) {
+  const reducedMotion = useReducedMotion();
   const chartRows = rows.slice(0, 12).map((row) => ({
     name: row.model_name,
-    shortName: row.model_name.length > 16 ? `${row.model_name.slice(0, 15)}…` : row.model_name,
+    shortName: row.model_name.length > 18 ? `${row.model_name.slice(0, 17)}…` : row.model_name,
     rating: Number(row.rating),
     rank: row.rank,
   })).filter((row) => Number.isFinite(row.rating));
@@ -71,22 +86,18 @@ export function RankingChart({ rows, label = "Leaderboard score chart" }) {
   }
 
   return (
-    <div className="arena-chart-frame" role="img" aria-label={label}>
+    <figure className="arena-chart-frame" aria-label={label}>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart accessibilityLayer data={chartRows} margin={{ top: 10, right: 8, bottom: 18, left: -12 }}>
-          <CartesianGrid vertical={false} stroke="var(--arena-grid)" strokeDasharray="3 5" />
-          <XAxis dataKey="shortName" interval={0} tick={{ fill: "var(--arena-muted)", fontSize: 9 }} axisLine={{ stroke: "var(--arena-border)" }} tickLine={false} />
-          <YAxis tick={{ fill: "var(--arena-muted)", fontSize: 10 }} axisLine={false} tickLine={false} width={42} />
-          <Tooltip
-            cursor={{ fill: "var(--arena-hover)" }}
-            contentStyle={{ border: "1px solid var(--arena-border)", borderRadius: 12, background: "var(--arena-panel)", color: "var(--arena-text)" }}
-            formatter={(value) => [formatArenaScore(value), "Arena score"]}
-            labelFormatter={(label, payload) => payload?.[0]?.payload?.name || label}
-          />
-          <Bar dataKey="rating" fill="var(--arena-accent)" radius={[5, 5, 0, 0]} maxBarSize={36} isAnimationActive animationDuration={650} />
+        <BarChart accessibilityLayer data={chartRows} layout="vertical" margin={{ top: 10, right: 14, bottom: 2, left: 2 }}>
+          <CartesianGrid horizontal={false} stroke="var(--arena-grid)" strokeDasharray="3 5" />
+          <XAxis type="number" domain={[0, "dataMax"]} tickFormatter={formatArenaScore} tick={{ fill: "var(--arena-muted)", fontSize: 9, fontFamily: "var(--arena-sans)" }} axisLine={false} tickLine={false} />
+          <YAxis type="category" dataKey="shortName" interval={0} width={122} tick={{ fill: "var(--arena-text-soft)", fontSize: 9, fontFamily: "var(--arena-sans)" }} axisLine={false} tickLine={false} />
+          <Tooltip cursor={{ fill: "var(--chart-hover)" }} content={<RankingChartTooltip />} />
+          <Bar dataKey="rating" fill="var(--arena-accent)" radius={0} maxBarSize={18} isAnimationActive={!reducedMotion} animationDuration={520} />
         </BarChart>
       </ResponsiveContainer>
-    </div>
+      <figcaption className="sr-only">{label}. Horizontal bars show source-published scores ordered by rank; the scale starts at zero and values are not percentiles.</figcaption>
+    </figure>
   );
 }
 

@@ -16,6 +16,8 @@ uniform float u_time;
 uniform float u_pixel_size;
 uniform float u_intensity;
 uniform float u_vignette_alpha;
+uniform float u_scanline_opacity;
+uniform vec3 u_scanline_color;
 uniform vec3 u_vignette;
 uniform vec3 u_palette[8];
 
@@ -54,6 +56,8 @@ void main() {
   float edge = max(abs(uv.x - 0.5) * 1.18, abs(uv.y - 0.5) * 2.0);
   float vignette = smoothstep(0.18, 0.82, edge) * u_vignette_alpha;
   color = mix(color, u_vignette, vignette);
+  float scanline = mod(floor(gl_FragCoord.y / 2.0), 2.0);
+  color = mix(color, u_scanline_color, scanline * u_scanline_opacity);
   gl_FragColor = vec4(color, 1.0);
 }
 `;
@@ -71,9 +75,9 @@ function compileShader(gl, type, source) {
 }
 
 function parseColor(value) {
-  const hex = value.match(/^#([\da-f]{3}|[\da-f]{6})$/i);
+  const hex = value.match(/^#([\da-f]{3}|[\da-f]{6}|[\da-f]{8})$/i);
   if (hex) {
-    const digits = hex[1].length === 3 ? hex[1].split("").map((digit) => digit + digit).join("") : hex[1];
+    const digits = hex[1].length === 3 ? hex[1].split("").map((digit) => digit + digit).join("") : hex[1].slice(0, 6);
     return [0, 2, 4].map((offset) => Number.parseInt(digits.slice(offset, offset + 2), 16) / 255);
   }
   const rgb = value.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:\s*[,/]\s*([\d.]+))?\s*\)/i);
@@ -89,7 +93,10 @@ function readThemePalette() {
   const vignetteAlpha = Number(styles.getPropertyValue("--dock-vignette-opacity").trim()) || (document.documentElement.dataset.theme === "light" ? 0.12 : 0.6);
   const intensity = Number(styles.getPropertyValue("--shader-intensity").trim()) || 1;
   const pixelSize = Number(styles.getPropertyValue("--shader-pixel-size").trim()) || 4;
-  return { palette, vignette, vignetteAlpha, intensity, pixelSize };
+  const scanlineOpacity = Number(styles.getPropertyValue("--dock-scanline-opacity").trim()) || 0;
+  const scanlineColor = parseColor(styles.getPropertyValue("--dock-scanline-color").trim());
+  if (!scanlineColor) return null;
+  return { palette, vignette, vignetteAlpha, intensity, pixelSize, scanlineOpacity, scanlineColor };
 }
 
 function interpolate(from, to, amount) {
@@ -129,6 +136,8 @@ export default function HeaderShaderField() {
       pixelSize: gl.getUniformLocation(program, "u_pixel_size"),
       intensity: gl.getUniformLocation(program, "u_intensity"),
       vignetteAlpha: gl.getUniformLocation(program, "u_vignette_alpha"),
+      scanlineOpacity: gl.getUniformLocation(program, "u_scanline_opacity"),
+      scanlineColor: gl.getUniformLocation(program, "u_scanline_color"),
       vignette: gl.getUniformLocation(program, "u_vignette"),
       palette: gl.getUniformLocation(program, "u_palette[0]"),
     };
@@ -153,6 +162,8 @@ export default function HeaderShaderField() {
         palette: mixStops(transitionFrom.palette, transitionTo.palette),
         vignette: interpolate(transitionFrom.vignette, transitionTo.vignette, steppedProgress),
         vignetteAlpha: transitionFrom.vignetteAlpha + (transitionTo.vignetteAlpha - transitionFrom.vignetteAlpha) * steppedProgress,
+        scanlineOpacity: transitionFrom.scanlineOpacity + (transitionTo.scanlineOpacity - transitionFrom.scanlineOpacity) * steppedProgress,
+        scanlineColor: interpolate(transitionFrom.scanlineColor, transitionTo.scanlineColor, steppedProgress),
         intensity: transitionFrom.intensity + (transitionTo.intensity - transitionFrom.intensity) * steppedProgress,
         pixelSize: transitionTo.pixelSize,
       };
@@ -163,6 +174,8 @@ export default function HeaderShaderField() {
       gl.uniform1f(uniforms.pixelSize, current.pixelSize);
       gl.uniform1f(uniforms.intensity, current.intensity);
       gl.uniform1f(uniforms.vignetteAlpha, current.vignetteAlpha);
+      gl.uniform1f(uniforms.scanlineOpacity, current.scanlineOpacity);
+      gl.uniform3fv(uniforms.scanlineColor, new Float32Array(current.scanlineColor));
       gl.uniform3fv(uniforms.vignette, new Float32Array(current.vignette));
       gl.uniform3fv(uniforms.palette, new Float32Array(current.palette.flat()));
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
