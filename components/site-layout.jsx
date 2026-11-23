@@ -1,31 +1,58 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
-import SiteNavigation from "@/components/site-navigation";
+import BootSequence from "@/components/boot-sequence";
+import GlobalSearch from "@/components/global-search";
+import LiveSourceStatus from "@/components/live-source-status";
 import ThemeToggle from "@/components/theme-toggle";
+
+const navigation = [
+  { href: "/", label: "Overview" },
+  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/models", label: "Models" },
+  { href: "/providers", label: "Providers" },
+  { href: "/compare", label: "Compare" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/router", label: "Router" },
+  { href: "/trends", label: "Trends" },
+  { href: "/history", label: "History" },
+  { href: "/intelligence", label: "Intelligence" },
+  { href: "/benchmarks", label: "Benchmarks" },
+];
 
 export default function SiteLayout({ children, theme }) {
   return (
-    <div className="site-frame arena-site-frame">
-      <a className="skip-to-content" href="#main-content">Skip to content</a>
-      <header className="topbar arena-topbar">
+    <div className="site-frame">
+      <BootSequence />
+      <header className="topbar">
         <Link className="brand-lockup" href="/" aria-label="ModelRouterX overview">
-          <Image src="/brand/arena-signal.svg" alt="" width={36} height={36} priority />
-          <span className="brand-name">modelrouter<span>x</span></span>
+          <Image src="/brand/modelrouterx.svg" alt="" width={34} height={34} priority />
+          <span className="brand-name">MODELROUTER<span>X</span></span>
         </Link>
-        <SiteNavigation />
-        <div className="topbar-actions"><ThemeToggle initialTheme={theme} /></div>
+        <nav className="main-nav" aria-label="Main navigation">
+          {navigation.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
+        </nav>
+        <div className="topbar-actions">
+          <GlobalSearch />
+          <ThemeToggle initialTheme={theme} />
+          <LiveSourceStatus />
+        </div>
       </header>
-      <div className="mobile-nav-wrap"><SiteNavigation mobile /></div>
-      <div id="main-content" tabIndex={-1}>{children}</div>
-      <footer className="site-footer arena-site-footer">
+      <div className="mobile-nav-wrap">
+        <nav className="mobile-nav" aria-label="Mobile navigation">
+          {navigation.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
+        </nav>
+      </div>
+      {children}
+      <footer className="site-footer">
         <div className="footer-brand">
-          <Image src="/brand/arena-signal.svg" alt="" width={24} height={24} />
-          <span>ARENA SIGNAL · INDEPENDENT PROJECT</span>
+          <Image src="/brand/modelrouterx.svg" alt="" width={22} height={22} />
+          <span>MODELROUTERX / INDEPENDENT MODEL INTELLIGENCE</span>
         </div>
         <div className="footer-links">
-          <a href="https://lmarena.ai/leaderboard" target="_blank" rel="noreferrer">LMArena leaderboard <ArrowUpRight aria-hidden="true" /></a>
-          <a href="https://huggingface.co/datasets/lmarena-ai/leaderboard-dataset" target="_blank" rel="noreferrer">Public dataset <ArrowUpRight aria-hidden="true" /></a>
+          <Link href="/about/data">Data & methodology <ArrowUpRight aria-hidden="true" /></Link>
+          <a href="https://openrouter.ai/docs/api-reference/models/list" target="_blank" rel="noreferrer">OpenRouter source <ArrowUpRight aria-hidden="true" /></a>
+          <a href="https://huggingface.co/docs/hub/en/api" target="_blank" rel="noreferrer">Hugging Face source <ArrowUpRight aria-hidden="true" /></a>
         </div>
       </footer>
     </div>
