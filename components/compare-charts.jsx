@@ -1,6 +1,10 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { useState } from "react";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, BarChart, CartesianGrid, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, XAxis, YAxis } from "recharts";
+import { ChartSeriesToggles } from "@/components/chart-controls";
+import useReducedMotion from "@/lib/use-reduced-motion";
 import { benchmarkValue, formatUsd } from "@/lib/model-utils";
 
 const benchmarkAxes = [
@@ -11,18 +15,37 @@ const benchmarkAxes = [
   { key: "opennessIndex", label: "Openness" },
 ];
 
+const compareSeries = [
+  { key: "first", label: "Model A", color: "var(--chart-1)" },
+  { key: "second", label: "Model B", color: "var(--chart-2)" },
+];
+
+const benchmarkConfig = {
+  first: { label: "Model A", color: "var(--chart-1)" },
+  second: { label: "Model B", color: "var(--chart-2)" },
+};
+
+const priceConfig = {
+  first: { label: "Model A", color: "var(--chart-1)" },
+  second: { label: "Model B", color: "var(--chart-2)" },
+};
+
+function toggleVisible(current, key) {
+  if (current.includes(key) && current.length === 1) return current;
+  return current.includes(key) ? current.filter((item) => item !== key) : [...current, key];
+}
+
 export default function CompareCharts({ first, second }) {
+  const [activeSeries, setActiveSeries] = useState(compareSeries.map((item) => item.key));
+  const reducedMotion = useReducedMotion();
   const radarData = benchmarkAxes
-    .map((metric) => ({
-      subject: metric.label,
-      first: benchmarkValue(first, metric.key),
-      second: benchmarkValue(second, metric.key),
-    }))
+    .map((metric) => ({ subject: metric.label, first: benchmarkValue(first, metric.key), second: benchmarkValue(second, metric.key) }))
     .filter((row) => row.first !== null && row.second !== null);
   const priceData = [
     { label: "Input / 1M", first: first.promptPricePerMillion, second: second.promptPricePerMillion },
     { label: "Output / 1M", first: first.completionPricePerMillion, second: second.completionPricePerMillion },
   ].filter((row) => row.first !== null && row.second !== null);
+  const series = compareSeries.map((item, index) => ({ ...item, label: index === 0 ? first.name : second.name }));
 
   return (
     <div className="compare-chart-grid">
@@ -32,19 +55,21 @@ export default function CompareCharts({ first, second }) {
           <span className="source-inline">Artificial Analysis via OpenRouter</span>
         </div>
         {radarData.length >= 3 ? (
-          <div className="comparison-chart-frame">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={radarData} outerRadius="68%">
-                <PolarGrid stroke="#293238" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: "#a0a8af", fontSize: 10 }} />
-                <PolarRadiusAxis angle={30} domain={[0, "auto"]} tick={{ fill: "#68727b", fontSize: 9 }} />
-                <Radar name={first.name} dataKey="first" stroke="#b7ff5a" fill="#b7ff5a" fillOpacity={0.16} />
-                <Radar name={second.name} dataKey="second" stroke="#53d8ff" fill="#53d8ff" fillOpacity={0.1} />
-                <Legend wrapperStyle={{ color: "#a0a8af", fontSize: 10 }} />
-                <Tooltip contentStyle={{ background: "#111519", border: "1px solid #293238", color: "#e8eaed", fontSize: 11 }} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            <ChartSeriesToggles items={series} activeKeys={activeSeries} onToggle={(key) => setActiveSeries((current) => toggleVisible(current, key))} label="Show or hide model benchmark series" />
+            <div className="comparison-chart-frame">
+              <ChartContainer config={benchmarkConfig} className="chart-canvas">
+                <RadarChart accessibilityLayer data={radarData} outerRadius="68%">
+                  <PolarGrid stroke="var(--chart-grid)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: "var(--text-secondary)", fontSize: 10, fontFamily: "var(--mrx-mono)" }} />
+                  <PolarRadiusAxis angle={30} domain={[0, "auto"]} tick={{ fill: "var(--text-muted)", fontSize: 9, fontFamily: "var(--mrx-mono)" }} axisLine={{ stroke: "var(--chart-grid)" }} />
+                  <ChartTooltip content={<ChartTooltipContent className="chart-tooltip" formatter={(value, name) => <div className="chart-tooltip-row"><span>{name}</span><strong>{Number(value).toFixed(1)}</strong></div>} />} />
+                  {activeSeries.includes("first") && <Radar name={first.name} dataKey="first" stroke="var(--color-first)" fill="var(--color-first)" fillOpacity={0.14} strokeWidth={2} isAnimationActive={!reducedMotion} animationDuration={720} />}
+                  {activeSeries.includes("second") && <Radar name={second.name} dataKey="second" stroke="var(--color-second)" fill="var(--color-second)" fillOpacity={0.12} strokeWidth={2} isAnimationActive={!reducedMotion} animationDuration={720} />}
+                </RadarChart>
+              </ChartContainer>
+            </div>
+          </>
         ) : (
           <div className="empty-state compact-empty"><h3>Insufficient shared benchmark data</h3><p>At least three comparable external index values are needed for a radar plot. Missing values are not drawn as zero.</p></div>
         )}
@@ -55,19 +80,21 @@ export default function CompareCharts({ first, second }) {
           <span className="source-inline">USD · OpenRouter</span>
         </div>
         {priceData.length ? (
-          <div className="comparison-chart-frame">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={priceData} margin={{ top: 14, right: 8, bottom: 0, left: 8 }}>
-                <CartesianGrid vertical={false} stroke="#293238" strokeDasharray="3 5" />
-                <XAxis dataKey="label" tick={{ fill: "#a0a8af", fontSize: 10 }} axisLine={{ stroke: "#343b42" }} tickLine={false} />
-                <YAxis tickFormatter={(value) => formatUsd(value)} tick={{ fill: "#858f98", fontSize: 10 }} axisLine={false} tickLine={false} width={62} />
-                <Tooltip formatter={(value) => formatUsd(value)} contentStyle={{ background: "#111519", border: "1px solid #293238", color: "#e8eaed", fontSize: 11 }} />
-                <Legend wrapperStyle={{ color: "#a0a8af", fontSize: 10 }} />
-                <Bar name={first.name} dataKey="first" fill="#b7ff5a" radius={[2, 2, 0, 0]} />
-                <Bar name={second.name} dataKey="second" fill="#53d8ff" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <>
+            <ChartSeriesToggles items={series} activeKeys={activeSeries} onToggle={(key) => setActiveSeries((current) => toggleVisible(current, key))} label="Show or hide model price series" />
+            <div className="comparison-chart-frame">
+              <ChartContainer config={priceConfig} className="chart-canvas">
+                <BarChart accessibilityLayer data={priceData} margin={{ top: 14, right: 8, bottom: 0, left: 8 }} barGap={4}>
+                  <CartesianGrid vertical={false} stroke="var(--chart-grid)" strokeDasharray="2 5" />
+                  <XAxis dataKey="label" tick={{ fill: "var(--text-secondary)", fontSize: 10, fontFamily: "var(--mrx-mono)" }} axisLine={{ stroke: "var(--chart-grid)" }} tickLine={false} />
+                  <YAxis tickFormatter={formatUsd} tick={{ fill: "var(--text-muted)", fontSize: 10, fontFamily: "var(--mrx-mono)" }} axisLine={false} tickLine={false} width={62} />
+                  <ChartTooltip cursor={{ fill: "var(--chart-hover)" }} content={<ChartTooltipContent className="chart-tooltip" formatter={(value, name) => <div className="chart-tooltip-row"><span>{name}</span><strong>{formatUsd(value)}</strong></div>} />} />
+                  {activeSeries.includes("first") && <Bar name={first.name} dataKey="first" fill="var(--color-first)" isAnimationActive={!reducedMotion} animationDuration={720} />}
+                  {activeSeries.includes("second") && <Bar name={second.name} dataKey="second" fill="var(--color-second)" isAnimationActive={!reducedMotion} animationDuration={720} />}
+                </BarChart>
+              </ChartContainer>
+            </div>
+          </>
         ) : (
           <div className="empty-state compact-empty"><h3>Pricing comparison unavailable</h3><p>One or both models do not publish both input and output prices.</p></div>
         )}

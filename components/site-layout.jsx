@@ -3,47 +3,31 @@ import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import BootSequence from "@/components/boot-sequence";
 import GlobalSearch from "@/components/global-search";
+import HeaderShaderField from "@/components/header-shader-field";
 import LiveSourceStatus from "@/components/live-source-status";
+import SiteNavigation from "@/components/site-navigation";
 import ThemeToggle from "@/components/theme-toggle";
-
-const navigation = [
-  { href: "/", label: "Overview" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/models", label: "Models" },
-  { href: "/providers", label: "Providers" },
-  { href: "/compare", label: "Compare" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/router", label: "Router" },
-  { href: "/trends", label: "Trends" },
-  { href: "/history", label: "History" },
-  { href: "/intelligence", label: "Intelligence" },
-  { href: "/benchmarks", label: "Benchmarks" },
-];
 
 export default function SiteLayout({ children, theme }) {
   return (
     <div className="site-frame">
+      <a className="skip-to-content" href="#main-content">Skip to content</a>
       <BootSequence />
       <header className="topbar">
+        <HeaderShaderField />
         <Link className="brand-lockup" href="/" aria-label="ModelRouterX overview">
           <Image src="/brand/modelrouterx.svg" alt="" width={34} height={34} priority />
           <span className="brand-name">MODELROUTER<span>X</span></span>
         </Link>
-        <nav className="main-nav" aria-label="Main navigation">
-          {navigation.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
-        </nav>
+        <SiteNavigation />
         <div className="topbar-actions">
           <GlobalSearch />
           <ThemeToggle initialTheme={theme} />
           <LiveSourceStatus />
         </div>
       </header>
-      <div className="mobile-nav-wrap">
-        <nav className="mobile-nav" aria-label="Mobile navigation">
-          {navigation.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
-        </nav>
-      </div>
-      {children}
+      <div className="mobile-nav-wrap"><SiteNavigation mobile /></div>
+      <div id="main-content" tabIndex={-1}>{children}</div>
       <footer className="site-footer">
         <div className="footer-brand">
           <Image src="/brand/modelrouterx.svg" alt="" width={22} height={22} />
