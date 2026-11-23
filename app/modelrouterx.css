@@ -808,3 +808,38 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 :root[data-theme="light"] .trend-preview-item:hover { background: var(--mrx-hover); }
 :root[data-theme="light"] .theme-toggle { background: var(--mrx-surface-raised); }
 :root[data-theme="light"] .primary-button { color: var(--mrx-accent-ink); }
+
+.source-health-panel { margin-top: 13px; padding: 17px; }
+.source-health-intro { max-width: 620px; margin: 7px 0 0; color: var(--mrx-muted); font-size: 10px; line-height: 1.65; }
+.source-health-refresh { min-height: 34px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--mrx-border); border-radius: 3px; padding: 0 10px; background: var(--mrx-surface); color: var(--mrx-text-soft); font-size: 10px; cursor: pointer; transition: border-color .18s ease, color .18s ease; }
+.source-health-refresh:hover { border-color: var(--mrx-green); color: var(--mrx-green); }
+.source-health-refresh svg { width: 13px; height: 13px; }
+.source-health-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 17px; }
+.source-health-card { min-width: 0; border: 1px solid var(--mrx-border); border-radius: 3px; padding: 14px; background: var(--mrx-surface-soft); }
+.source-health-card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.source-health-label { color: var(--mrx-dim); font: 8px var(--mrx-mono); letter-spacing: .08em; }
+.source-health-card h3 { margin: 11px 0 0; color: var(--mrx-text-strong); font-size: 12px; font-weight: 600; }
+.source-health-details { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 14px 0 0; border-top: 1px solid var(--mrx-border); padding-top: 12px; }
+.source-health-details > div { min-width: 0; }
+.source-health-details dt { color: var(--mrx-dim); font: 8px var(--mrx-mono); }
+.source-health-details dd { margin: 4px 0 0; color: var(--mrx-text-soft); font-size: 9px; overflow-wrap: anywhere; }
+.source-health-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 14px; color: var(--mrx-cyan); font-size: 9px; }
+.source-health-link svg { width: 11px; height: 11px; }
+.source-health-message { margin: 14px 0 0; color: var(--mrx-muted); font-size: 10px; }
+:root[data-theme="light"] .source-health-refresh,
+:root[data-theme="light"] .source-health-card { border-color: var(--mrx-border); background: var(--mrx-surface-raised); }
+:root[data-theme="light"] .source-health-intro,
+:root[data-theme="light"] .source-health-message,
+:root[data-theme="light"] .source-health-details dt,
+:root[data-theme="light"] .source-health-label { color: var(--mrx-muted); }
+
+@media (max-width: 760px) {
+  .source-health-grid { grid-template-columns: minmax(0,1fr); }
+  .source-health-heading { align-items: center; }
+}
+@media (max-width: 480px) {
+  .source-health-panel { padding: 14px; }
+  .source-health-heading { align-items: flex-start; }
+  .source-health-refresh { width: 34px; flex: 0 0 auto; justify-content: center; padding: 0; }
+  .source-health-details { grid-template-columns: minmax(0,1fr); gap: 10px; }
+}

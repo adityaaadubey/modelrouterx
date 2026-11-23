@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ArrowUpRight, Database, FileCheck2, Fingerprint, ShieldCheck } from "lucide-react";
+import SourceHealthPanel from "@/components/source-health-panel";
 
-export const metadata = { title: "Data & methodology · ModelRouterX", description: "Review ModelRouterX data sources, ranking rules, refresh windows, and privacy boundaries." };
+export const metadata = { title: "Data & methodology · ModelRouterX", description: "Review ModelRouterX data sources, freshness, ranking rules, refresh windows, and privacy boundaries." };
 
 const principles = [
   { icon: Database, title: "Source values stay attributed", body: "Catalog metadata, Design Arena ELO tracks, and Artificial Analysis indices are sourced through OpenRouter. Hugging Face downloads and likes come from its Hub API." },
@@ -16,6 +17,7 @@ export default function DataMethodologyPage() {
       <div className="page-kicker"><span>TRUST & PROVENANCE</span><span className="kicker-separator" /><span>LAST UPDATED 2026.11</span></div>
       <section className="page-hero-row"><div><p className="eyebrow"><ShieldCheck aria-hidden="true" /> OPEN METHODS</p><h1>Data, without the black box.</h1><p className="page-lede">ModelRouterX is an evidence index, not an oracle. Every visible metric should be traceable to a source and a clearly stated rule.</p></div></section>
       <section className="principle-grid">{principles.map(({ icon: Icon, title, body }, index) => <article className="panel principle-card" key={title}><span className="principle-index">0{index + 1}</span><Icon aria-hidden="true" /><h2>{title}</h2><p>{body}</p></article>)}</section>
+      <SourceHealthPanel />
       <section className="panel methodology-panel">
         <div className="section-heading"><div><p className="eyebrow">SOURCE REGISTER</p><h2>Where the numbers come from</h2></div></div>
         <div className="source-register">

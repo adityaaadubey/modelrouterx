@@ -61,4 +61,26 @@ test("identical batch variants do not duplicate source Arena ranks", () => {
 test("Hugging Face activity counts are not fabricated when missing", () => {
   assert.equal(normalizeHuggingFaceModel({ modelId: "org/model", downloads: 12, likes: 0 }).downloads, 12);
   assert.equal(normalizeHuggingFaceModel({ modelId: "org/model", likes: 0 }), null);
+  assert.equal(normalizeHuggingFaceModel({ modelId: "org/model", downloads: 1.5, likes: 1 }), null);
+});
+
+test("untrusted catalog values cannot overflow persisted numeric columns or crash date parsing", () => {
+  const model = normalizeOpenRouterModel({
+    id: " org/model name ",
+    created: Number.MAX_SAFE_INTEGER,
+    context_length: Number.MAX_SAFE_INTEGER,
+    pricing: { prompt: Number.MAX_VALUE, completion: "0.000001" },
+    architecture: { input_modalities: ["text", 4, "image"], output_modalities: ["text"] },
+  });
+  assert.equal(model.id, "org/model name");
+  assert.equal(model.createdAt, null);
+  assert.equal(model.contextLength, null);
+  assert.equal(model.promptPricePerMillion, null);
+  assert.equal(model.completionPricePerMillion, 1);
+  assert.deepEqual(model.inputModalities, ["text", "image"]);
+  assert.equal(model.sourceUrl, "https://openrouter.ai/org/model%20name");
+});
+
+test("model IDs containing control characters are rejected", () => {
+  assert.equal(normalizeOpenRouterModel({ id: "org/model\nname" }), null);
 });

@@ -11,7 +11,7 @@ ModelRouterX is a source-attributed AI model catalog and intelligence dashboard.
 
 ## Data and environment
 
-The Supabase schema is in `supabase/migrations/`. Server-side reads and ingestion use the project-provided Supabase environment variables. Never expose `SUPABASE_SERVICE_ROLE_KEY` to a browser bundle. The Vercel Cron endpoint also requires a `CRON_SECRET` value configured in the Vercel project environment; the scheduled route is `/api/cron/ingest` and is configured in `vercel.json`.
+The Supabase schema is in `supabase/migrations/`. Server-side reads and ingestion use the project-provided Supabase environment variables. Never expose `SUPABASE_SERVICE_ROLE_KEY` to a browser bundle. The Vercel Cron endpoint also requires a `CRON_SECRET` value configured in the Vercel project environment; the scheduled route is `/api/cron/ingest` and is configured in `vercel.json`. The current schedule is daily at 03:00 UTC. This is a scheduled serverless job, not an always-on worker; more frequent scheduled ingestion requires a deployment plan that supports the desired Cron frequency or an external scheduler calling the authenticated endpoint.
 
 `.env.example` lists the expected variable names without credentials. Vercel supplies the connected Supabase variables; do not copy production secrets into source control.
 
@@ -31,9 +31,10 @@ The Supabase schema is in `supabase/migrations/`. Server-side reads and ingestio
 
 - `GET /api/models` — OpenRouter catalog with source status and bounded pagination.
 - `GET /api/trending` — Hugging Face popularity records.
+- `GET /api/sources` — last persisted per-source health, attempt/success timestamps, record counts, and data age; unavailable status is reported when Supabase cannot be queried. Responses are CDN-cached for 60 seconds.
 - `GET /api/history` — stored snapshot records; supports `source=huggingface`, `model`, and `limit` parameters.
 - `GET /api/cron/ingest` — authenticated scheduled ingestion; requires the configured cron secret.
 
 ## Running and checks
 
-Use the repository's package manager and the `dev`, `test`, and `build` scripts in `package.json`. The test suite covers model normalization, cost calculations, and source-record handling. A production deployment also needs the connected Supabase project and `CRON_SECRET` configured in Vercel. Verify the custom domain's availability and ownership separately before assigning it; no domain is hardcoded into the app.
+Use the repository's package manager and the `dev`, `test`, and `build` scripts in `package.json`. The tests cover model normalization, cost calculations, bounded upstream retries, payload limits, source-health freshness, and catalog change detection. A production deployment also needs the connected Supabase project and `CRON_SECRET` configured in Vercel. Verify the custom domain's availability and ownership separately before assigning it; no domain is hardcoded into the app.
