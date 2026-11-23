@@ -28,19 +28,31 @@ const themeInitScript = `(() => {
 })();`
 
 export const metadata = {
-  title: 'ModelRouterX — Independent Model Intelligence',
-  description: 'Compare foundation models using attributed benchmarks, live capabilities, context windows, and transparent pricing.',
-  generator: 'ModelRouterX',
-  applicationName: 'ModelRouterX',
-  keywords: ['AI models', 'model benchmarks', 'LLM pricing', 'model comparison', 'Artificial Analysis'],
-  icons: { icon: '/favicon.svg', shortcut: '/favicon.svg' },
+  title: { default: 'Arena Signal — AI model rankings', template: '%s · Arena Signal' },
+  description: 'Explore source-published Arena rankings, flip through model cards, and compare labs. Independent project using the public LMArena leaderboard dataset.',
+  generator: 'Arena Signal',
+  applicationName: 'Arena Signal',
+  keywords: ['AI model rankings', 'Arena leaderboard', 'model comparison', 'AI labs'],
+  icons: { icon: '/brand/arena-signal.svg', shortcut: '/brand/arena-signal.svg' },
   openGraph: {
-    title: 'ModelRouterX — Independent Model Intelligence',
-    description: 'Find the signal. Route with evidence.',
-    siteName: 'ModelRouterX',
+    title: 'Arena Signal — AI model rankings',
+    description: 'Explore public Arena model rankings and compare models within the same track.',
+    siteName: 'Arena Signal',
     type: 'website',
   },
   robots: { index: true, follow: true },
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  colorScheme: 'dark light',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f4f2ed' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a1917' },
+  ],
 }
 
 export default async function RootLayout({ children }) {
