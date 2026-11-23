@@ -1236,7 +1236,8 @@ body.mrx-body::after, .topbar::after, .topbar::before { display: none !important
 .topbar.arena-topbar .brand-lockup { gap: 10px; padding: 0; border: 0; background: transparent; }
 .topbar.arena-topbar .brand-lockup img { width: 36px; height: 36px; }
 .topbar.arena-topbar .brand-name { color: var(--arena-text); font: 700 12px/1 var(--arena-sans); letter-spacing: .13em; }
-.topbar.arena-topbar .brand-name span { margin-left: 4px; color: var(--arena-accent); }
+.topbar.arena-topbar .brand-name span { color: var(--arena-accent); }
+
 .topbar.arena-topbar .main-nav { display: flex; flex: 1; justify-content: center; gap: 4px; margin-left: auto; }
 .topbar.arena-topbar .main-nav a, .arena-site-frame .mobile-nav a { border: 1px solid transparent; border-radius: 999px !important; padding: 8px 13px; color: var(--arena-text-soft); font: 500 12px/1.2 var(--arena-sans); text-transform: none; transition: background .18s ease, color .18s ease, border-color .18s ease; }
 .topbar.arena-topbar .main-nav a:hover, .arena-site-frame .mobile-nav a:hover { border-color: var(--arena-border); background: var(--arena-card); color: var(--arena-text); }

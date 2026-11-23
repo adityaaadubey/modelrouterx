@@ -9,9 +9,9 @@ export default function SiteLayout({ children, theme }) {
     <div className="site-frame arena-site-frame">
       <a className="skip-to-content" href="#main-content">Skip to content</a>
       <header className="topbar arena-topbar">
-        <Link className="brand-lockup" href="/" aria-label="Arena Signal overview">
+        <Link className="brand-lockup" href="/" aria-label="ModelRouterX overview">
           <Image src="/brand/arena-signal.svg" alt="" width={36} height={36} priority />
-          <span className="brand-name">ARENA<span>SIGNAL</span></span>
+          <span className="brand-name">modelrouter<span>x</span></span>
         </Link>
         <SiteNavigation />
         <div className="topbar-actions"><ThemeToggle initialTheme={theme} /></div>
