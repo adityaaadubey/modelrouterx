@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: arena-signal-sync
+    runtime: python
+    plan: starter
+    region: oregon
+    buildCommand: pip install -r scraper/requirements.txt
+    startCommand: uvicorn scraper.scraper:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ARENA_REFRESH_INTERVAL_SECONDS
+        value: "900"
+      - key: MAX_ROWS_PER_TRACK
+        value: "100"
+      - key: ARENA_USER_AGENT
+        value: "ArenaSignal/1.0"
+      - key: ARENA_STATE_FILE
+        value: /tmp/arena-signal-state.sha256

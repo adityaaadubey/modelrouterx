@@ -5,16 +5,10 @@ import { usePathname } from "next/navigation";
 
 const navigation = [
   { href: "/", label: "Overview" },
-  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/leaderboard", label: "Leaderboards" },
   { href: "/models", label: "Models" },
   { href: "/providers", label: "Providers" },
   { href: "/compare", label: "Compare" },
-  { href: "/pricing", label: "Pricing" },
-  { href: "/router", label: "Router" },
-  { href: "/trends", label: "Trends" },
-  { href: "/history", label: "History" },
-  { href: "/intelligence", label: "Intelligence" },
-  { href: "/benchmarks", label: "Benchmarks" },
 ];
 
 export default function SiteNavigation({ mobile = false }) {
