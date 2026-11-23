@@ -4,17 +4,6 @@ const nextConfig = {
     unoptimized: true,
   },
   poweredByHeader: false,
-  async redirects() {
-    return [
-      { source: '/about/data', destination: '/', permanent: false },
-      { source: '/history', destination: '/', permanent: false },
-      { source: '/pricing', destination: '/', permanent: false },
-      { source: '/router', destination: '/', permanent: false },
-      { source: '/trends', destination: '/', permanent: false },
-      { source: '/intelligence', destination: '/', permanent: false },
-      { source: '/benchmarks', destination: '/', permanent: false },
-    ]
-  },
   async headers() {
     return [
       {

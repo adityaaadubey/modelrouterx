@@ -1,31 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
-import { ChartSeriesToggles, ChartTimeRange, getRowsInRange } from "@/components/chart-controls";
-import useReducedMotion from "@/lib/use-reduced-motion";
+import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { formatDate } from "@/lib/model-utils";
-
-const series = [
-  { key: "elo", label: "Source ELO", color: "var(--chart-1)" },
-  { key: "rank", label: "Source rank", color: "var(--chart-2)" },
-];
-
-const chartConfig = {
-  elo: { label: "Source ELO", color: "var(--chart-1)" },
-  rank: { label: "Source rank", color: "var(--chart-2)" },
-};
 
 function formatCapture(value) {
   return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" }).format(new Date(value));
 }
 
 export default function ModelArenaHistoryChart({ snapshots, modelName }) {
-  const [selectedTrack, setSelectedTrack] = useState("");
-  const [range, setRange] = useState("ALL");
-  const [activeSeries, setActiveSeries] = useState(series.map((item) => item.key));
-  const reducedMotion = useReducedMotion();
   const tracks = useMemo(() => {
     const values = new Map();
     for (const snapshot of snapshots) {
@@ -37,6 +20,7 @@ export default function ModelArenaHistoryChart({ snapshots, modelName }) {
     }
     return [...values.values()].sort((a, b) => a.arena.localeCompare(b.arena) || a.category.localeCompare(b.category));
   }, [snapshots]);
+  const [selectedTrack, setSelectedTrack] = useState("");
   const activeTrack = tracks.find((track) => track.value === selectedTrack) || tracks[0];
   const points = useMemo(() => {
     if (!activeTrack) return [];
@@ -48,15 +32,7 @@ export default function ModelArenaHistoryChart({ snapshots, modelName }) {
       .filter((point) => point.elo != null)
       .sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
   }, [snapshots, activeTrack]);
-  const visiblePoints = useMemo(() => getRowsInRange(points, range), [points, range]);
   const latest = points.at(-1);
-
-  function toggleSeries(key) {
-    setActiveSeries((current) => {
-      if (current.includes(key) && current.length === 1) return current;
-      return current.includes(key) ? current.filter((item) => item !== key) : [...current, key];
-    });
-  }
 
   if (!tracks.length) {
     return <div className="empty-state compact-empty"><h3>No stored Arena trend yet</h3><p>Track-specific ELO and rank history begins with the first successful scheduled catalog capture.</p></div>;
@@ -65,32 +41,24 @@ export default function ModelArenaHistoryChart({ snapshots, modelName }) {
   return (
     <div className="model-arena-history">
       <div className="arena-history-controls">
-        <label className="provider-select"><span className="sr-only">Select Arena history track</span><select value={activeTrack.value} onChange={(event) => { setSelectedTrack(event.target.value); setRange("ALL"); }}>{tracks.map((track) => <option key={track.value} value={track.value}>{track.arena} · {track.category}</option>)}</select></label>
-        <span className="result-count"><strong>{visiblePoints.length}</strong> visible / {points.length} captures</span>
+        <label className="provider-select"><span className="sr-only">Select Arena history track</span><select value={activeTrack.value} onChange={(event) => setSelectedTrack(event.target.value)}>{tracks.map((track) => <option key={track.value} value={track.value}>{track.arena} · {track.category}</option>)}</select></label>
+        <span className="result-count"><strong>{points.length}</strong> stored captures</span>
         {latest ? <span className="result-count">Latest source rank <strong>{latest.rank == null ? "N/A" : `#${latest.rank}`}</strong></span> : null}
       </div>
-      {points.length >= 2 ? (
-        <figure className="history-chart-figure" aria-label={`${modelName} ${activeTrack.arena} ${activeTrack.category} Arena ELO and source rank history`}>
-          <div className="chart-toolbar">
-            <ChartTimeRange value={range} onChange={setRange} rows={points} />
-            <ChartSeriesToggles items={series} activeKeys={activeSeries} onToggle={toggleSeries} label="Show or hide Arena history series" />
-          </div>
-          <div className="history-chart-frame arena-history-chart-frame">
-            <ChartContainer config={chartConfig} className="chart-canvas">
-              <LineChart accessibilityLayer data={visiblePoints} margin={{ top: 12, right: 18, bottom: 5, left: 4 }}>
-                <CartesianGrid stroke="var(--chart-grid)" strokeDasharray="2 5" vertical={false} />
-                <XAxis dataKey="captured_at" tickFormatter={formatDate} tick={{ fill: "var(--text-muted)", fontSize: 10, fontFamily: "var(--mrx-mono)" }} axisLine={{ stroke: "var(--chart-grid)" }} tickLine={false} minTickGap={28} />
-                {activeSeries.includes("elo") && <YAxis yAxisId="elo" tick={{ fill: "var(--chart-1)", fontSize: 9, fontFamily: "var(--mrx-mono)" }} axisLine={false} tickLine={false} width={52} domain={["auto", "auto"]} />}
-                {activeSeries.includes("rank") && <YAxis yAxisId="rank" orientation="right" reversed tick={{ fill: "var(--chart-2)", fontSize: 9, fontFamily: "var(--mrx-mono)" }} axisLine={false} tickLine={false} width={42} allowDecimals={false} domain={["auto", "auto"]} />}
-                <ChartTooltip cursor={{ stroke: "var(--chart-crosshair)", strokeDasharray: "3 3" }} content={<ChartTooltipContent className="chart-tooltip" labelFormatter={formatCapture} formatter={(value, name) => <div className="chart-tooltip-row"><span>{name}</span><strong>{value == null ? "N/A" : Number(value).toFixed(0)}</strong></div>} />} />
-                {activeSeries.includes("elo") && <Line yAxisId="elo" type="monotone" dataKey="elo" name="Source ELO" stroke="var(--color-elo)" strokeWidth={2} dot={false} activeDot={{ r: 4, strokeWidth: 2 }} connectNulls={false} isAnimationActive={!reducedMotion} animationDuration={720} animationEasing="ease-out" />}
-                {activeSeries.includes("rank") && <Line yAxisId="rank" type="monotone" dataKey="rank" name="Source rank" stroke="var(--color-rank)" strokeWidth={1.75} strokeDasharray="4 3" dot={false} activeDot={{ r: 4, strokeWidth: 2 }} connectNulls={false} isAnimationActive={!reducedMotion} animationDuration={720} animationEasing="ease-out" />}
-              </LineChart>
-            </ChartContainer>
-          </div>
-          <figcaption className="sr-only">Use the range and series buttons to explore historical source ELO and rank values.</figcaption>
-        </figure>
-      ) : <div className="empty-state compact-empty"><h3>Not enough history points yet</h3><p>{points.length} stored capture{points.length === 1 ? "" : "s"} for {activeTrack.category}; at least two are needed for a trend line.</p></div>}
+      {points.length >= 2 ? <div className="history-chart-frame arena-history-chart-frame" role="img" aria-label={`${modelName} ${activeTrack.arena} ${activeTrack.category} Arena ELO and source rank history across ${points.length} snapshots`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={points} margin={{ top: 12, right: 18, bottom: 5, left: 4 }}>
+            <CartesianGrid stroke="#293238" strokeDasharray="3 5" vertical={false} />
+            <XAxis dataKey="captured_at" tickFormatter={formatDate} tick={{ fill: "#858f98", fontSize: 10 }} axisLine={{ stroke: "#343b42" }} tickLine={false} minTickGap={28} />
+            <YAxis yAxisId="elo" tick={{ fill: "#b7ff5a", fontSize: 9 }} axisLine={false} tickLine={false} width={48} domain={["auto", "auto"]} />
+            <YAxis yAxisId="rank" orientation="right" reversed tick={{ fill: "#53d8ff", fontSize: 9 }} axisLine={false} tickLine={false} width={38} allowDecimals={false} domain={["auto", "auto"]} />
+            <Tooltip labelFormatter={formatCapture} formatter={(value, name) => [value == null ? "N/A" : Number(value).toFixed(0), name === "ELO" ? "Source ELO" : "Source rank"]} contentStyle={{ background: "#111519", border: "1px solid #293238", color: "#e8eaed", fontSize: 11 }} />
+            <Legend wrapperStyle={{ color: "#8d989f", fontSize: 10 }} />
+            <Line yAxisId="elo" type="monotone" dataKey="elo" name="ELO" stroke="#b7ff5a" strokeWidth={2} dot={{ r: 2 }} activeDot={{ r: 4 }} connectNulls={false} />
+            <Line yAxisId="rank" type="monotone" dataKey="rank" name="Source rank" stroke="#53d8ff" strokeWidth={1.5} strokeDasharray="4 3" dot={{ r: 2 }} activeDot={{ r: 4 }} connectNulls={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div> : <div className="empty-state compact-empty"><h3>Not enough history points yet</h3><p>{points.length} stored capture{points.length === 1 ? "" : "s"} for {activeTrack.category}; at least two are needed for a trend line.</p></div>}
       <p className="table-note">ELO uses the left axis; source rank uses the reversed right axis so a higher position means a better rank. Ranks are specific to this Arena track.</p>
     </div>
   );
