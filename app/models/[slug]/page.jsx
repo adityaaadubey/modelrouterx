@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowUpRight, Braces, ChartNoAxesCombined, ExternalLink, Lay
 import { getCatalog, getHistorySnapshots } from "@/lib/platform-data";
 import { benchmarkValue, formatCount, formatDate, formatTokens, formatUsd, modelIdFromSlug } from "@/lib/model-utils";
 import ModelHistoryChart from "@/components/model-history-chart";
+import ModelArenaHistoryChart from "@/components/model-arena-history-chart";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -37,9 +38,9 @@ export default async function ModelDetailPage({ params }) {
       </section>
 
       <section className="detail-metric-grid">
-        <article className="metric-card"><div className="metric-label"><span>INPUT PRICE</span><Braces aria-hidden="true" /></div><div className="metric-value detail-price">{model.promptPricePerMillion === null ? "N/A" : formatUsd(model.promptPricePerMillion)}<span className="metric-unit">/ 1M</span></div><p>USD per 1M input tokens</p></article>
-        <article className="metric-card"><div className="metric-label"><span>OUTPUT PRICE</span><Braces aria-hidden="true" /></div><div className="metric-value detail-price">{model.completionPricePerMillion === null ? "N/A" : formatUsd(model.completionPricePerMillion)}<span className="metric-unit">/ 1M</span></div><p>USD per 1M output tokens</p></article>
-        <article className="metric-card"><div className="metric-label"><span>CONTEXT WINDOW</span><Layers3 aria-hidden="true" /></div><div className="metric-value detail-price">{model.contextLength ? formatCount(model.contextLength) : "N/A"}<span className="metric-unit">TOKENS</span></div><p>As listed by OpenRouter</p></article>
+        <article className="metric-card"><div className="metric-label"><span>INPUT PRICE</span><Braces aria-hidden="true" /></div><div className="metric-value detail-price">{model.promptPricePerMillion === null ? "N/A" : formatUsd(model.promptPricePerMillion)} <span className="metric-unit">/ 1M</span></div><p>USD per 1M input tokens</p></article>
+        <article className="metric-card"><div className="metric-label"><span>OUTPUT PRICE</span><Braces aria-hidden="true" /></div><div className="metric-value detail-price">{model.completionPricePerMillion === null ? "N/A" : formatUsd(model.completionPricePerMillion)} <span className="metric-unit">/ 1M</span></div><p>USD per 1M output tokens</p></article>
+        <article className="metric-card"><div className="metric-label"><span>CONTEXT WINDOW</span><Layers3 aria-hidden="true" /></div><div className="metric-value detail-price">{model.contextLength ? formatCount(model.contextLength) : "N/A"} <span className="metric-unit">TOKENS</span></div><p>As listed by OpenRouter</p></article>
         <article className="metric-card"><div className="metric-label"><span>CATALOG TIMESTAMP</span><ChartNoAxesCombined aria-hidden="true" /></div><div className="metric-value detail-date">{formatDate(model.createdAt)}</div><p>Not an independently verified release date</p></article>
       </section>
 
@@ -49,6 +50,10 @@ export default async function ModelDetailPage({ params }) {
       </section>
 
       <section className="panel detail-panel benchmark-detail-panel"><div className="section-heading"><div><p className="eyebrow">ATTRIBUTED THIRD-PARTY VALUES</p><h2>Artificial Analysis indexes</h2></div><span className="source-inline">via OpenRouter catalog</span></div>{benchmarks.length ? <div className="benchmark-value-grid">{benchmarks.map(({ label, value }) => <div key={label}><span>{label}</span><strong>{value.toFixed(1)}</strong></div>)}</div> : <div className="empty-inline">No Artificial Analysis benchmark values were reported for this model.</div>}</section>
+
+      <section className="panel detail-panel arena-detail-panel"><div className="section-heading"><div><p className="eyebrow">TRACK-SPECIFIC ELO · OPENROUTER</p><h2>Design Arena results</h2></div><Link className="panel-link" href="/leaderboard">All Arena tracks <ArrowUpRight aria-hidden="true" /></Link></div>{model.designArena?.length ? <div className="table-overflow"><table className="model-table"><thead><tr><th scope="col">Arena</th><th scope="col">Category</th><th scope="col">ELO</th><th scope="col">Source rank</th><th scope="col">Win rate</th></tr></thead><tbody>{model.designArena.map((entry) => <tr key={`${entry.arena}-${entry.category}`}><td>{entry.arena}</td><td>{entry.category}</td><td className="numeric-cell">{Number(entry.elo).toFixed(0)}</td><td className="numeric-cell">{entry.rank == null ? "N/A" : `#${entry.rank}`}</td><td className="numeric-cell">{entry.winRate == null ? "N/A" : `${Number(entry.winRate).toFixed(1)}%`}</td></tr>)}</tbody></table></div> : <p className="empty-inline">No Design Arena records were reported for this model.</p>}<p className="table-note">Scores belong to their named track and are not comparable across categories.</p></section>
+
+      <section className="panel detail-panel"><div className="section-heading"><div><p className="eyebrow">SUPABASE SNAPSHOTS</p><h2>Design Arena ELO history</h2></div><span className="panel-index">{history.rows.length} RECORDS</span></div><ModelArenaHistoryChart snapshots={history.rows} modelName={model.name} /><p className="table-note">Rank and ELO records are retained by capture date and selected track.</p></section>
 
       <section className="panel detail-panel"><div className="section-heading"><div><p className="eyebrow">SUPABASE SNAPSHOTS</p><h2>Observed price history</h2></div><span className="panel-index">{history.rows.length} RECORDS</span></div><ModelHistoryChart snapshots={history.rows} />{history.rows.length ? <p className="table-note">Latest capture: {formatDate(history.rows[0].captured_at)}. Historical values are captured daily after cron is configured.</p> : <p className="table-note">No snapshots exist yet. Historical series begin after the first authenticated scheduled ingestion.</p>}{history.error ? <p className="source-error">{history.error}</p> : null}</section>
 

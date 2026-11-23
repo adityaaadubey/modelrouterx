@@ -36,13 +36,19 @@ export default function ModelTable({ models, initialQuery = "", initialSort = "n
   const [provider, setProvider] = useState("all");
   const [sortKey, setSortKey] = useState(initialSort);
   const [direction, setDirection] = useState(initialDirection);
+  const [maxInputPrice, setMaxInputPrice] = useState("");
+  const [minimumContext, setMinimumContext] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = 50;
   const providers = useMemo(() => [...new Set(models.map((model) => model.provider))].sort(), [models]);
 
   const filteredModels = useMemo(() => {
     const needle = query.trim().toLowerCase();
     const filtered = models.filter((model) => {
       const searchable = `${model.name} ${model.id} ${model.provider} ${model.description || ""} ${(model.inputModalities || []).join(" ")} ${(model.outputModalities || []).join(" ")}`.toLowerCase();
-      return (!needle || searchable.includes(needle)) && (provider === "all" || model.provider === provider);
+      const withinPrice = maxInputPrice === "" || (model.promptPricePerMillion !== null && Number(model.promptPricePerMillion) <= Number(maxInputPrice));
+      const withinContext = minimumContext === "" || (model.contextLength !== null && Number(model.contextLength) >= Number(minimumContext));
+      return (!needle || searchable.includes(needle)) && (provider === "all" || model.provider === provider) && withinPrice && withinContext;
     });
 
     return filtered.sort((left, right) => {
@@ -53,9 +59,14 @@ export default function ModelTable({ models, initialQuery = "", initialSort = "n
       if (typeof a === "string" && typeof b === "string") return a.localeCompare(b) * (direction === "asc" ? 1 : -1);
       return (Number(a) - Number(b)) * (direction === "asc" ? 1 : -1);
     });
-  }, [models, query, provider, sortKey, direction]);
+  }, [models, query, provider, maxInputPrice, minimumContext, sortKey, direction]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredModels.length / pageSize));
+  const currentPage = Math.min(page, totalPages - 1);
+  const visibleModels = filteredModels.slice(currentPage * pageSize, (currentPage + 1) * pageSize);
 
   function handleSort(key) {
+    setPage(0);
     if (key === sortKey) setDirection((current) => current === "asc" ? "desc" : "asc");
     else {
       setSortKey(key);
@@ -69,15 +80,17 @@ export default function ModelTable({ models, initialQuery = "", initialSort = "n
         <label className="table-search">
           <Search aria-hidden="true" />
           <span className="sr-only">Search the model catalog</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Filter model, provider, modality…" />
+          <input value={query} onChange={(event) => { setQuery(event.target.value); setPage(0); }} placeholder="Filter model, provider, modality…" />
         </label>
         <label className="provider-select">
           <span className="sr-only">Filter by namespace</span>
-          <select value={provider} onChange={(event) => setProvider(event.target.value)}>
+          <select value={provider} onChange={(event) => { setProvider(event.target.value); setPage(0); }}>
             <option value="all">All namespaces</option>
             {providers.map((name) => <option key={name} value={name}>{name}</option>)}
           </select>
         </label>
+        <label className="table-filter-number"><span className="sr-only">Maximum input price in dollars per million tokens</span><input type="number" min="0" step="0.25" value={maxInputPrice} onChange={(event) => { setMaxInputPrice(event.target.value); setPage(0); }} placeholder="Max $ / 1M" /></label>
+        <label className="table-filter-number"><span className="sr-only">Minimum context length in tokens</span><input type="number" min="0" step="1000" value={minimumContext} onChange={(event) => { setMinimumContext(event.target.value); setPage(0); }} placeholder="Min context" /></label>
         <span className="result-count"><strong>{filteredModels.length}</strong> / {models.length} models</span>
       </div>
       <div className="table-overflow">
@@ -95,9 +108,9 @@ export default function ModelTable({ models, initialQuery = "", initialSort = "n
             </tr>
           </thead>
           <tbody>
-            {filteredModels.map((model, index) => (
+            {visibleModels.map((model, index) => (
               <tr key={model.id}>
-                {showRank ? <td className="rank-cell">{index + 1}</td> : null}
+                {showRank ? <td className="rank-cell">{currentPage * pageSize + index + 1}</td> : null}
                 <td className="model-cell">
                   <Link href={`/models/${modelSlug(model.id)}`} className="model-name-link">{model.name}</Link>
                   <span className="model-id">{model.id}</span>
@@ -121,6 +134,7 @@ export default function ModelTable({ models, initialQuery = "", initialSort = "n
           </div>
         ) : null}
       </div>
+      {filteredModels.length > pageSize ? <nav className="pagination-bar" aria-label="Model catalog pagination"><span>Showing {currentPage * pageSize + 1}–{Math.min((currentPage + 1) * pageSize, filteredModels.length)} of {filteredModels.length}</span><div><button type="button" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={currentPage === 0}>Previous</button><span>PAGE {currentPage + 1} / {totalPages}</span><button type="button" onClick={() => setPage((current) => Math.min(totalPages - 1, current + 1))} disabled={currentPage >= totalPages - 1}>Next</button></div></nav> : null}
       <p className="table-note">AA index is an external Artificial Analysis value when supplied by OpenRouter; it is not a ModelRouterX score. Missing values stay N/A.</p>
     </div>
   );
